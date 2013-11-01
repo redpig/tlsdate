@@ -1,17 +1,61 @@
-This is an example run - starting as root and dropping to nobody:
+tlsdate: secure parasitic rdate replacement
 
-  % sudo ./tlsdate -v
-  V: tlsdate version 0.1
+ tlsdate sets the local clock by securely connecting with TLS to remote
+ servers and extracting the remote time out of the secure handshake. Unlike
+ ntpdate, tlsdate uses TCP, for instance connecting to a remote HTTPS or TLS
+ enabled service, and provides some protection against adversaries that try to
+ feed you malicious time information.
+
+On Debian GNU/Linux and related systems, we provide an init.d script that
+controls the tlsdated daemon. It will notice network changes and regularly
+invoke tlsdate to keep the clock in sync. Start it like so:
+
+  /etc/init.d/tlsdate start
+
+Here is an example an unprivileged user fetching the remote time:
+
+  % tlsdate -V -n -H encrypted.google.com
+  Fri Apr 19 17:56:46 PDT 2013
+
+
+This is an example run - starting as root and dropping to nobody, setting the
+clock and printing it:
+
+  % sudo tlsdate -V
+  Fri Apr 19 17:57:49 PDT 2013
+
+
+Here is an example with a custom host and custom port without verification:
+
+  % sudo tlsdate -v --skip-verification -p 80 -H rgnx.net
+  V: tlsdate version 0.0.6
   V: We were called with the following arguments:
-  V: verbose = 1, help = 0
-  V: time is currently 1325865059 sec and 671981 usec
-  V: SSL_get_peer_certificate returned
-  V: verification OK: 0
-  V: ssl_verify_result returned 0
-  V: server_random fetched in 0 sec
-  V: server_random with ntohl is: 1325865060 and 0 usec
-  V: setting time returned: 0
-  tlsdate: SUCCESS
+  V: disable SSL certificate check host = rgnx.net:80
+  WARNING: Skipping certificate verification!
+  V: time is currently 1366419507.456647065
+  V: time is greater than RECENT_COMPILE_DATE
+  V: using TLSv1_client_method()
+  V: Using OpenSSL for SSL
+  V: opening socket to rgnx.net:80
+  V: Certificate verification skipped!
+  V: public key is ready for inspection
+  V: key type: EVP_PKEY_RSA
+  V: keybits: 1024
+  V: key length appears safe
+  V: server time 1366419508 (difference is about -1 s) was fetched in 338 ms
+  V: setting time succeeded
 
-"It's a piece of shit but It Works." - this is not yet secure and it needs
-an audit before it should be used for anything, ever.
+Here is an example where a system may not have any kind of RTC at boot. Do the
+time warp to restore sanity and do so with a leap of faith:
+
+  % sudo tlsdate -V -l -t
+  Fri Apr 19 18:08:03 PDT 2013
+
+
+Some SSL/TLS services do not provide accurate time in their handshake process;
+tlsdate may also be used to fetch time by processing the HTTP Date headers of
+HTTP services:
+
+  % sudo tlsdate -V -l -t -w
+  Wed Oct 30 18:08:46 CET 2013
+
